@@ -17,7 +17,7 @@ export class AudioManager {
       channels: config.audio.channels,
       threshold: 0.5,
       silence: '1.0s',
-      device: null, // Will be auto-detected or set via ALSA
+      device: 'plughw:1,0', // ATR USB microphone (card 1, device 0)
       recordProgram: 'arecord', // Use ALSA for Raspberry Pi
       verbose: config.debug.enabled
     };
@@ -28,7 +28,8 @@ export class AudioManager {
       sampleRate: config.audio.sampleRate,
       signed: true,
       float: false,
-      bitOrder: 'LE' // Little Endian
+      bitOrder: 'LE', // Little Endian
+      device: 'plughw:0,0' // bcm2835 Headphones (aux jack for Marshall amp)
     };
 
     this.initializeSpeaker();
@@ -177,10 +178,13 @@ export class AudioManager {
     try {
       logger.info('Checking available audio devices...');
       
-      // This would typically use aplay -l and arecord -l on Linux
-      // For now, we'll log the expected device
-      logger.info(`Expected microphone device: ${config.audio.deviceName}`);
-      logger.info('Use "aplay -l" and "arecord -l" to list available audio devices');
+      logger.info('Audio Device Configuration:');
+      logger.info(`• Microphone: ATR USB microphone (card 1, device 0)`);
+      logger.info(`• Output: bcm2835 Headphones → Marshall amp (card 0, device 0)`);
+      logger.info(`• Recording device: ${this.recordingOptions.device}`);
+      logger.info(`• Playback device: ${this.speakerOptions.device}`);
+      logger.info('');
+      logger.info('To verify devices, run: aplay -l && arecord -l');
       
     } catch (error) {
       logger.error('Error checking audio devices:', error);
