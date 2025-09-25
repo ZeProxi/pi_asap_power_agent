@@ -1,0 +1,143 @@
+GUIDES
+Quickstarts
+Vite (Javascript)
+
+
+Copy page
+
+Learn how to create a web application that enables voice conversations with ElevenLabs AI agents
+This tutorial will guide you through creating a web client that can interact with a ElevenLabs agent. You’ll learn how to implement real-time voice conversations, allowing users to speak with an AI agent that can listen, understand, and respond naturally using voice synthesis.
+
+Looking to build with React/Next.js? Check out our Next.js guide
+
+What You’ll Need
+An ElevenLabs agent created following this guide
+npm installed on your local system
+Basic knowledge of JavaScript
+Looking for a complete example? Check out our Vanilla JS demo on GitHub.
+
+Project Setup
+1
+Create a Project Directory
+Open a terminal and create a new directory for your project:
+
+mkdir elevenlabs-conversational-ai
+cd elevenlabs-conversational-ai
+
+2
+Initialize npm and Install Dependencies
+Initialize a new npm project and install the required packages:
+
+npm init -y
+npm install vite @elevenlabs/client
+
+3
+Set up Basic Project Structure
+Add this to your package.json:
+
+package.json
+
+{
+    "scripts": {
+        ...
+        "dev:frontend": "vite"
+    }
+}
+Create the following file structure:
+
+elevenlabs-conversational-ai/
+├── index.html
+├── script.js
+├── package-lock.json
+├── package.json
+└── node_modules
+
+Implementing the Voice Chat Interface
+1
+Create the HTML Interface
+In index.html, set up a simple user interface:
+
+
+index.html
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ElevenLabs Agents</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+        <h1>ElevenLabs Agents</h1>
+        <div style="margin-bottom: 20px;">
+            <button id="startButton" style="padding: 10px 20px; margin: 5px;">Start Conversation</button>
+            <button id="stopButton" style="padding: 10px 20px; margin: 5px;" disabled>Stop Conversation</button>
+        </div>
+        <div style="font-size: 18px;">
+            <p>Status: <span id="connectionStatus">Disconnected</span></p>
+            <p>Agent is <span id="agentStatus">listening</span></p>
+        </div>
+        <script type="module" src="../images/script.js"></script>
+    </body>
+</html>
+2
+Implement the Conversation Logic
+In script.js, implement the functionality:
+
+script.js
+
+import { Conversation } from '@elevenlabs/client';
+const startButton = document.getElementById('startButton');
+const stopButton = document.getElementById('stopButton');
+const connectionStatus = document.getElementById('connectionStatus');
+const agentStatus = document.getElementById('agentStatus');
+let conversation;
+async function startConversation() {
+    try {
+        // Request microphone permission
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Start the conversation
+        conversation = await Conversation.startSession({
+            agentId: 'YOUR_AGENT_ID', // Replace with your agent ID
+            onConnect: () => {
+                connectionStatus.textContent = 'Connected';
+                startButton.disabled = true;
+                stopButton.disabled = false;
+            },
+            onDisconnect: () => {
+                connectionStatus.textContent = 'Disconnected';
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            },
+            onError: (error) => {
+                console.error('Error:', error);
+            },
+            onModeChange: (mode) => {
+                agentStatus.textContent = mode.mode === 'speaking' ? 'speaking' : 'listening';
+            },
+        });
+    } catch (error) {
+        console.error('Failed to start conversation:', error);
+    }
+}
+async function stopConversation() {
+    if (conversation) {
+        await conversation.endSession();
+        conversation = null;
+    }
+}
+startButton.addEventListener('click', startConversation);
+stopButton.addEventListener('click', stopConversation);
+3
+Start the frontend server
+npm run dev:frontend
+
+Make sure to replace 'YOUR_AGENT_ID' with your actual agent ID from ElevenLabs.
+(Optional) Authenticate with a Signed URL
+Next Steps
+Now that you have a basic implementation, you can:
+
+Add visual feedback for voice activity
+Implement error handling and retry logic
+Add a chat history display
+Customize the UI to match your brand

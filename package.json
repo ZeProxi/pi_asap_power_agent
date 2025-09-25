@@ -1,0 +1,38 @@
+{
+  "name": "elevenlabs-pi-agent",
+  "version": "1.0.0",
+  "description": "Real-time ElevenLabs Agent WebSocket integration for Raspberry Pi",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node src/test-connection.js",
+    "install-deps": "npm install",
+    "setup-pi": "sudo apt update && sudo apt install -y nodejs npm pulseaudio pulseaudio-utils alsa-utils"
+  },
+  "keywords": [
+    "elevenlabs",
+    "websocket",
+    "voice",
+    "ai",
+    "raspberry-pi",
+    "real-time"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "dotenv": "^16.3.1",
+    "node-record-lpcm16": "^1.0.1",
+    "speaker": "^0.5.4",
+    "wav": "^1.0.2",
+    "prism-media": "^1.3.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

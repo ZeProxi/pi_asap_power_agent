@@ -1,0 +1,21 @@
+I want to create a fast, realtime websocket integration with Elevenlabs agents. 
+
+Using the documentation in documentation/*.txt, following their instructions we will be setting up a rasberry pi 4 with Ubuntu 24 LTS server.
+
+Select the best tool for fastest possible use cases. (probably nodejs)
+
+--important notes--
+
+ELEVENLABS_API_KEY={redacted}
+AGENT_ID=agent_8701k5jm02g2ek4s8za1j9c3efvp
+
+Development is being done on a windows device with SSH connection to the rasberry pi (ubuntu) device. We will use git to push and pull from the devices for fast code transfer.
+
+You may need to provide me the commands to run in bash for ubuntu to install dependencies etc. 
+
+Hardware:
+USB powered microphone: Aduio Technica
+Model: ATR2100-USB
+
+Output Device:
+{To Be Determined}

@@ -1,19 +1,15 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Logs
-logs
-*.log
 
 # Runtime data
 pids
@@ -27,12 +23,27 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
-jspm_packages/
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
 # Optional npm cache directory
 .npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -43,15 +54,33 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
 
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# Audio recordings (temporary files)
+recordings/
+*.wav
+*.pcm
+*.raw
 
 # OS generated files
 .DS_Store
@@ -62,6 +91,9 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
