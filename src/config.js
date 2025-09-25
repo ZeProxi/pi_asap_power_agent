@@ -12,10 +12,10 @@ export const config = {
 
   // Audio Configuration
   audio: {
-    sampleRate: parseInt(process.env.AUDIO_SAMPLE_RATE) || 16000,
-    channels: parseInt(process.env.AUDIO_CHANNELS) || 1,
+    sampleRate: parseInt(process.env.AUDIO_SAMPLE_RATE) || 48000, // ATR2100-USB native rate
+    channels: parseInt(process.env.AUDIO_CHANNELS) || 2, // ATR2100-USB is stereo
     deviceName: process.env.AUDIO_DEVICE_NAME || 'ATR2100-USB',
-    // PCM format for ElevenLabs (16-bit, little-endian)
+    // PCM format for ElevenLabs (16-bit, little-endian) - will downsample
     format: 'pcm_16000',
     bitDepth: 16,
     encoding: 'signed-integer'
