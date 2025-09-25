@@ -94,11 +94,21 @@ export class ElevenLabsClient {
   // Initialize conversation with ElevenLabs
   initializeConversation() {
     const initMessage = {
-      type: 'conversation_initiation_client_data',
-      conversation_config_override: config.conversation.configOverride,
-      custom_llm_extra_body: config.conversation.customLlmExtraBody,
-      dynamic_variables: config.conversation.dynamicVariables
+      type: 'conversation_initiation_client_data'
     };
+
+    // Only add non-null configuration
+    if (config.conversation.configOverride) {
+      initMessage.conversation_config_override = config.conversation.configOverride;
+    }
+    
+    if (config.conversation.customLlmExtraBody) {
+      initMessage.custom_llm_extra_body = config.conversation.customLlmExtraBody;
+    }
+    
+    if (config.conversation.dynamicVariables) {
+      initMessage.dynamic_variables = config.conversation.dynamicVariables;
+    }
 
     logger.websocket('Sending conversation initialization', initMessage);
     this.sendMessage(initMessage);

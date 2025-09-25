@@ -19,7 +19,7 @@ export class AudioManager {
       threshold: 0.5,
       silence: '1.0s',
       device: 'plughw:1,0', // ATR USB microphone (card 1, device 0)
-      recordProgram: 'arecord', // Use ALSA for Raspberry Pi
+      recordProgram: 'arecord', // Use ALSA for Raspberry Pi (not sox)
       verbose: config.debug.enabled
     };
 
