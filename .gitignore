@@ -81,6 +81,10 @@ recordings/
 *.wav
 *.pcm
 *.raw
+test-*.raw
+microphone-test.raw
+test-direct.wav
+test-pure-alsa.wav
 
 # OS generated files
 .DS_Store
