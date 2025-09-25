@@ -14,8 +14,8 @@ export class AudioManager {
     
     // Audio configuration based on ElevenLabs requirements
     this.recordingOptions = {
-      sampleRate: config.audio.sampleRate,
-      channels: config.audio.channels,
+      sampleRate: config.audio.sampleRate, // 48000 Hz for ATR2100-USB
+      channels: config.audio.channels, // 2 channels (stereo) for ATR2100-USB
       threshold: 0.5,
       silence: '1.0s',
       device: 'plughw:1,0', // ATR USB microphone (card 1, device 0)
@@ -23,14 +23,61 @@ export class AudioManager {
       verbose: config.debug.enabled
     };
 
-    // ALSA playback options
+    // ALSA playback options (ElevenLabs sends 16kHz mono PCM)
     this.playbackDevice = 'plughw:0,0'; // bcm2835 Headphones (aux jack for Marshall amp)
     this.playbackOptions = [
       '-D', this.playbackDevice,
       '-f', 'S16_LE',
-      '-c', config.audio.channels.toString(),
-      '-r', config.audio.sampleRate.toString()
+      '-c', '1', // ElevenLabs audio is mono
+      '-r', '16000' // ElevenLabs audio is 16kHz
     ];
+  }
+
+  // Convert 48kHz stereo to 16kHz mono for ElevenLabs
+  convertAudioFormat(inputBuffer) {
+    try {
+      // Input: 48kHz stereo (2 channels), 16-bit samples
+      // Output: 16kHz mono (1 channel), 16-bit samples
+      
+      const inputSampleRate = 48000;
+      const outputSampleRate = 16000;
+      const inputChannels = 2;
+      const outputChannels = 1;
+      
+      // Calculate decimation factor (3:1 for 48kHz to 16kHz)
+      const decimationFactor = inputSampleRate / outputSampleRate;
+      
+      // Convert buffer to 16-bit signed integers
+      const inputSamples = [];
+      for (let i = 0; i < inputBuffer.length; i += 2) {
+        inputSamples.push(inputBuffer.readInt16LE(i));
+      }
+      
+      // Convert stereo to mono by averaging channels
+      const monoSamples = [];
+      for (let i = 0; i < inputSamples.length; i += inputChannels) {
+        const left = inputSamples[i] || 0;
+        const right = inputSamples[i + 1] || 0;
+        monoSamples.push(Math.round((left + right) / 2));
+      }
+      
+      // Downsample by taking every nth sample
+      const outputSamples = [];
+      for (let i = 0; i < monoSamples.length; i += decimationFactor) {
+        outputSamples.push(monoSamples[Math.floor(i)]);
+      }
+      
+      // Convert back to buffer
+      const outputBuffer = Buffer.alloc(outputSamples.length * 2);
+      for (let i = 0; i < outputSamples.length; i++) {
+        outputBuffer.writeInt16LE(outputSamples[i] || 0, i * 2);
+      }
+      
+      return outputBuffer;
+    } catch (error) {
+      logger.error('Audio format conversion error:', error);
+      return inputBuffer; // Return original if conversion fails
+    }
   }
 
   startRecording(onAudioData) {
@@ -49,12 +96,15 @@ export class AudioManager {
         // Handle audio data chunks
         this.recordingStream.stream().on('data', (chunk) => {
           if (onAudioData && chunk.length > 0) {
+            // Convert from 48kHz stereo to 16kHz mono for ElevenLabs
+            const convertedChunk = this.convertAudioFormat(chunk);
+            
             // Convert PCM data to base64 for ElevenLabs
-            const base64Audio = chunk.toString('base64');
+            const base64Audio = convertedChunk.toString('base64');
             onAudioData(base64Audio);
             
             if (config.debug.enabled) {
-              logger.audio(`Audio chunk captured: ${chunk.length} bytes`);
+              logger.audio(`Audio chunk: ${chunk.length}→${convertedChunk.length} bytes`);
             }
           }
         });
