@@ -8,6 +8,9 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node src/test-connection.js",
+    "test-mic": "node src/test-microphone.js",
+    "test-speakers": "node src/test-speakers.js",
+    "test-audio": "npm run test-mic && npm run test-speakers",
     "install-deps": "npm install",
     "setup-pi": "sudo apt update && sudo apt install -y nodejs npm pulseaudio pulseaudio-utils alsa-utils"
   },
