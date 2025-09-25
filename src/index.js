@@ -2,6 +2,7 @@
 
 import { ElevenLabsClient } from './websocket/elevenlabsClient.js';
 import { AudioManager } from './audio/audioManager.js';
+import { VoiceActivationDetector } from './voiceActivation.js';
 import { logger } from './utils/logger.js';
 import { config } from './config.js';
 
@@ -9,8 +10,13 @@ class ElevenLabsAgent {
   constructor() {
     this.client = new ElevenLabsClient();
     this.audioManager = new AudioManager();
+    this.voiceActivation = new VoiceActivationDetector(
+      () => this.onSpeechStart(),
+      () => this.onSpeechEnd()
+    );
     this.isRunning = false;
     this.conversationActive = false;
+    this.isConnected = false;
     
     // Bind event handlers
     this.setupEventHandlers();
@@ -60,10 +66,12 @@ class ElevenLabsAgent {
       // Check audio devices
       await this.audioManager.checkAudioDevices();
 
-      // Connect to ElevenLabs WebSocket
-      await this.client.connect();
+      // Start voice activation detection (but don't connect to WebSocket yet)
+      await this.voiceActivation.startListening();
 
-      logger.info('ElevenLabs Agent is ready! Speak into your microphone...');
+      logger.info('🎙️  ElevenLabs Agent is ready! Speak into your microphone to activate...');
+      logger.info('💡 WebSocket will connect automatically when speech is detected');
+      logger.info('⏱️  Connection will close after 20 seconds of silence');
 
     } catch (error) {
       logger.error('Failed to start ElevenLabs Agent:', error);
@@ -74,12 +82,45 @@ class ElevenLabsAgent {
 
   handleConnect() {
     logger.connection('Connected to ElevenLabs Agent');
+    this.isConnected = true;
     this.startConversation();
   }
 
   handleDisconnect() {
     logger.connection('Disconnected from ElevenLabs Agent');
+    this.isConnected = false;
     this.stopConversation();
+  }
+
+  async onSpeechStart() {
+    if (this.isConnected) {
+      logger.info('🗣️  Speech detected (already connected)');
+      return;
+    }
+
+    logger.info('🗣️  Speech detected - connecting to ElevenLabs...');
+    
+    try {
+      await this.client.connect();
+    } catch (error) {
+      logger.error('Failed to connect on speech detection:', error);
+    }
+  }
+
+  async onSpeechEnd() {
+    if (!this.isConnected) {
+      logger.info('🤫 Speech ended (already disconnected)');
+      return;
+    }
+
+    logger.info('🤫 Speech ended - disconnecting from ElevenLabs...');
+    
+    // Disconnect with a small delay to allow final processing
+    setTimeout(() => {
+      if (this.isConnected) {
+        this.client.disconnect();
+      }
+    }, 2000);
   }
 
   handleError(error) {
@@ -265,6 +306,9 @@ class ElevenLabsAgent {
     
     this.isRunning = false;
     
+    // Stop voice activation
+    this.voiceActivation.stopListening();
+    
     // Stop conversation
     this.stopConversation();
     
@@ -272,7 +316,9 @@ class ElevenLabsAgent {
     this.audioManager.cleanup();
     
     // Disconnect WebSocket
-    this.client.disconnect();
+    if (this.isConnected) {
+      this.client.disconnect();
+    }
     
     logger.info('ElevenLabs Agent shutdown complete');
     
