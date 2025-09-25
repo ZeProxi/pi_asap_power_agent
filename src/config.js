@@ -37,16 +37,8 @@ export const config = {
 
   // Conversation Configuration
   conversation: {
-    // Override agent settings if needed
-    configOverride: {
-      agent: {
-        prompt: {
-          prompt: "You are a helpful AI assistant running on a Raspberry Pi. Be concise and friendly."
-        },
-        language: "en"
-      },
-      // TTS settings are handled by agent configuration, not overrides
-    },
+    // No configuration overrides - use agent's dashboard settings
+    configOverride: null,
     
     // LLM parameters
     customLlmExtraBody: {
