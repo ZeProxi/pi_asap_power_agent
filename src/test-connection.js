@@ -67,8 +67,7 @@ class ConnectionTester {
     try {
       await this.audioManager.checkAudioDevices();
       
-      // Test speaker initialization
-      this.audioManager.initializeSpeaker();
+      // Audio manager is already initialized in constructor
       
       return {
         sampleRate: config.audio.sampleRate,

@@ -45,9 +45,7 @@ export const config = {
         },
         language: "en"
       },
-      tts: {
-        voice_id: "21m00Tcm4TlvDq8ikWAM" // Default ElevenLabs voice
-      }
+      // TTS settings are handled by agent configuration, not overrides
     },
     
     // LLM parameters
