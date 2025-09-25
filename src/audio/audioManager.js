@@ -1,5 +1,6 @@
 import recorder from 'node-record-lpcm16';
-import Speaker from 'speaker';
+import { spawn } from 'child_process';
+import { writeFileSync, unlinkSync } from 'fs';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 
@@ -7,9 +8,9 @@ export class AudioManager {
   constructor() {
     this.isRecording = false;
     this.recordingStream = null;
-    this.speaker = null;
     this.audioQueue = [];
     this.isPlaying = false;
+    this.tempAudioFiles = [];
     
     // Audio configuration based on ElevenLabs requirements
     this.recordingOptions = {
@@ -22,27 +23,14 @@ export class AudioManager {
       verbose: config.debug.enabled
     };
 
-    this.speakerOptions = {
-      channels: config.audio.channels,
-      bitDepth: config.audio.bitDepth,
-      sampleRate: config.audio.sampleRate,
-      signed: true,
-      float: false,
-      bitOrder: 'LE', // Little Endian
-      device: 'plughw:0,0' // bcm2835 Headphones (aux jack for Marshall amp)
-    };
-
-    this.initializeSpeaker();
-  }
-
-  initializeSpeaker() {
-    try {
-      this.speaker = new Speaker(this.speakerOptions);
-      logger.audio('Speaker initialized successfully');
-    } catch (error) {
-      logger.error('Failed to initialize speaker:', error);
-      throw error;
-    }
+    // ALSA playback options
+    this.playbackDevice = 'plughw:0,0'; // bcm2835 Headphones (aux jack for Marshall amp)
+    this.playbackOptions = [
+      '-D', this.playbackDevice,
+      '-f', 'S16_LE',
+      '-c', config.audio.channels.toString(),
+      '-r', config.audio.sampleRate.toString()
+    ];
   }
 
   startRecording(onAudioData) {
@@ -139,31 +127,55 @@ export class AudioManager {
       try {
         this.isPlaying = true;
         
-        // Create a new speaker instance for this playback
-        const speaker = new Speaker(this.speakerOptions);
+        // Create temporary file for audio data
+        const tempFile = `/tmp/audio_${Date.now()}.raw`;
+        this.tempAudioFiles.push(tempFile);
         
-        speaker.on('close', () => {
+        // Write PCM data to temporary file
+        writeFileSync(tempFile, buffer);
+        
+        // Use aplay to play the audio
+        const aplay = spawn('aplay', [...this.playbackOptions, tempFile]);
+        
+        aplay.on('close', (code) => {
           this.isPlaying = false;
-          logger.audio('Audio playback completed');
           
-          // Play next queued audio if available
-          if (this.audioQueue.length > 0) {
-            const nextBuffer = this.audioQueue.shift();
-            this.playAudioBuffer(nextBuffer);
+          // Clean up temporary file
+          try {
+            unlinkSync(tempFile);
+            const index = this.tempAudioFiles.indexOf(tempFile);
+            if (index > -1) {
+              this.tempAudioFiles.splice(index, 1);
+            }
+          } catch (cleanupError) {
+            logger.warn('Failed to cleanup temp audio file:', cleanupError);
           }
           
-          resolve();
+          if (code === 0) {
+            logger.audio('Audio playback completed');
+            
+            // Play next queued audio if available
+            if (this.audioQueue.length > 0) {
+              const nextBuffer = this.audioQueue.shift();
+              this.playAudioBuffer(nextBuffer);
+            }
+            
+            resolve();
+          } else {
+            logger.error(`aplay exited with code ${code}`);
+            reject(new Error(`Audio playback failed with code ${code}`));
+          }
         });
 
-        speaker.on('error', (error) => {
+        aplay.on('error', (error) => {
           this.isPlaying = false;
-          logger.error('Speaker error:', error);
+          logger.error('aplay error:', error);
           reject(error);
         });
 
-        // Write audio data to speaker
-        speaker.write(buffer);
-        speaker.end();
+        aplay.stderr.on('data', (data) => {
+          logger.debug('aplay stderr:', data.toString());
+        });
 
       } catch (error) {
         this.isPlaying = false;
@@ -182,7 +194,8 @@ export class AudioManager {
       logger.info(`• Microphone: ATR USB microphone (card 1, device 0)`);
       logger.info(`• Output: bcm2835 Headphones → Marshall amp (card 0, device 0)`);
       logger.info(`• Recording device: ${this.recordingOptions.device}`);
-      logger.info(`• Playback device: ${this.speakerOptions.device}`);
+      logger.info(`• Playback device: ${this.playbackDevice}`);
+      logger.info(`• Using native aplay for audio output (more reliable on Pi)`);
       logger.info('');
       logger.info('To verify devices, run: aplay -l && arecord -l');
       
@@ -197,15 +210,17 @@ export class AudioManager {
     
     this.stopRecording();
     
-    if (this.speaker) {
+    // Clean up any remaining temporary audio files
+    this.tempAudioFiles.forEach(file => {
       try {
-        this.speaker.close();
+        unlinkSync(file);
       } catch (error) {
-        logger.error('Error closing speaker:', error);
+        logger.debug(`Failed to cleanup temp file ${file}:`, error);
       }
-    }
+    });
     
     this.audioQueue = [];
+    this.tempAudioFiles = [];
     this.isPlaying = false;
   }
 }
